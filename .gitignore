@@ -2,3 +2,5 @@ scrapai
 chromedriver.exe
 .env
 __pycache__
+data
+analysis_result
