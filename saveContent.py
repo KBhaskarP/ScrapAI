@@ -3,21 +3,28 @@ import json
 from datetime import datetime
 from cleaner import remove_script_and_style_tags
 
-def save_html(body_content,url):
+def save_html(content, url, page_num):
     """
     Save the content of the body of an HTML page to a file.
 
-    :param body_content: The content of the body of an HTML page.
-    :return: The string "Content Saved".
+    :param content: The content of the body of an HTML page.
+    :param url: The URL of the webpage that was analyzed.
+    :param page_num: The page number of the webpage that was analyzed.
+    :return: The string "Content saved to '{file_path}'."
     """
-    body_content = remove_script_and_style_tags(body_content)
-    current_time = datetime.now().strftime("%H_%M_%S_%f")
-    segment = url_name_seggregation(url)
-    if not os.path.exists("data"):
-        os.makedirs("data")
-    with open(f"data/{segment}_content_{current_time}.html", 'w', encoding="utf-8") as f:
-        f.write(body_content)
-    return "Content Saved"
+    content = remove_script_and_style_tags(content)
+    folder = 'data'
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    
+    timestamp = datetime.now().strftime("%H_%M_%S_%f")
+    filename = f'books_content_{timestamp}_{page_num}.html'
+    file_path = os.path.join(folder, filename)
+    
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(content)
+    
+    return f"Content saved to {file_path}"
 
 def url_name_seggregation(url):
 
@@ -31,8 +38,7 @@ def url_name_seggregation(url):
     result = url.split("//")[1].split(".")[0]
     return result
 
-def save_results_to_json(url, metadata, html_structure, keywords, lists, tables, links, folder='analysis_result'):
-    
+def save_results_to_json(url, metadata, html_structure, keywords, lists, tables, links, page_num):
     """
     Save the results of HTML analysis to a JSON file.
 
@@ -43,30 +49,28 @@ def save_results_to_json(url, metadata, html_structure, keywords, lists, tables,
     :param lists: A list of lists, where each sublist contains the text of the items in a list on the webpage.
     :param tables: A list of dictionaries, where each dictionary represents a table on the webpage, and contains the rows of the table as a list of dictionaries.
     :param links: A list of dictionaries, where each dictionary represents a link on the webpage, and contains the text and URL of the link.
-    :param folder: The folder to save the results to. Defaults to "analysis_result".
-
+    :param page_num: The page number of the webpage that was analyzed.
     :return: The string "Analysis results saved to '{file_path}'."
     """
-    url_name=url_name_seggregation(url)
-    current_time = datetime.now().strftime("%H_%M_%S_%f")
-    filename='html_analysis_results.json'
-    # Create directory if it doesn't exist
+    folder = 'analysis_result'
     if not os.path.exists(folder):
         os.makedirs(folder)
-
-    # Path for the output JSON file
-    file_path = os.path.join(folder, f"{url_name}_{current_time}_{filename}")
-
+    
+    timestamp = datetime.now().strftime("%H_%M_%S_%f")
+    filename = f'books_{timestamp}_{page_num}_html_analysis_results.json'
+    file_path = os.path.join(folder, filename)
+    
     results = {
-        'metadata': metadata,
-        'html_structure': html_structure,
-        'keywords': keywords,
-        'lists': lists,
-        'tables': tables,
-        'links': links
+        "url": url,
+        "metadata": metadata,
+        "html_structure": html_structure,
+        "keywords": keywords,
+        "lists": lists,
+        "tables": tables,
+        "links": links
     }
-
-    with open(file_path, 'w') as f:
+    
+    with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=4)
     
-    print(f"Analysis results saved to '{file_path}'.")
+    return f"Analysis results saved to '{file_path}'."

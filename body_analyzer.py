@@ -1,4 +1,3 @@
-
 from bs4 import BeautifulSoup
 import pandas as pd
 from nltk.corpus import stopwords
@@ -13,8 +12,7 @@ nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('punkt_tab')
 
-def analyze_html(url):
-
+def analyze_html(url, page_num):
     """
     Analyze the HTML content of a webpage and extract metadata, HTML structure, keywords, lists, tables, and links.
 
@@ -84,4 +82,4 @@ def analyze_html(url):
         links.append(link_info)
 
     # Save results to JSON file
-    return save_results_to_json(url, metadata, html_structure, keywords, lists, tables, links)
+    return save_results_to_json(url, metadata, html_structure, keywords, lists, tables, links, page_num)
