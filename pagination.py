@@ -26,9 +26,8 @@ def detect_and_generate_urls(base_url, total_pages):
     # Check query patterns
     for key in query_patterns:
         if key in query:
-            query_copy = query.copy()
             return [
-                urljoin(base_url, f"{path}?{key}={i}") if i > 1 
+                f"{parsed_url.scheme}://{parsed_url.netloc}{path}?{key}={i}" if i > 1 
                 else base_url for i in range(1, total_pages + 1)
             ]
 
