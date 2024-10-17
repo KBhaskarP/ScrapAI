@@ -8,43 +8,73 @@ from pagination import detect_and_generate_urls
 
 st.title("ScrapAI")
 
-BASE_URL = st.text_input("Enter the URL of the first page (including any query parameters): ")
-total_pages = st.number_input("Enter the number of pages to scrape:", min_value=1, value=1, step=1)
+# Initialize session state variables
+if 'last_scraped_url' not in st.session_state:
+    st.session_state.last_scraped_url = ""
+if 'url_changed' not in st.session_state:
+    st.session_state.url_changed = True
 
-if st.button("Scrape and Save Site"):
-    st.write("Please wait! We are working...")
-    all_content = []
-    
-    page_urls = detect_and_generate_urls(BASE_URL, total_pages)
-    
-    # Create placeholders for dynamic content
-    status_placeholder = st.empty()
-    
-    for page, page_url in enumerate(page_urls, start=1):
-        # Update status message
-        status_placeholder.write(f"Scraping page {page} of {total_pages}: {page_url}")
-        
-        RESULT = scrape_website_free(page_url)
-        BODY_CONTENT = extract_content(RESULT)
-        CLEANED_CONTENT = clean_content(BODY_CONTENT)
-        
-        # Save and analyze immediately after scraping each page
-        save_result = save_html(BODY_CONTENT, page_url, page)
-        html_analysis = analyze_html(page_url, page)
-        
-        all_content.append({
-            "page": page,
-            "page_url": page_url,
-            "body_content": BODY_CONTENT,
-            "cleaned_content": CLEANED_CONTENT
-        })
-    
-    st.session_state.all_content = all_content
-    st.session_state.current_page = 1
-    st.session_state.analysis_completed = "All content saved and analyzed successfully!"
+# Function to update URL
+def update_url():
+    st.session_state.url_changed = st.session_state.current_url != st.session_state.last_scraped_url
 
-    # Clear the placeholders after completion
-    status_placeholder.empty()
+# Function to handle scraping
+def scrape_site():
+    if st.session_state.url_changed:
+        st.write("Please wait! We are working...")
+        
+        try:
+            all_content = []
+            BASE_URL = st.session_state.current_url
+            total_pages = st.session_state.total_pages
+            
+            page_urls = detect_and_generate_urls(BASE_URL, total_pages)
+            
+            # Create placeholder for status
+            status_placeholder = st.empty()
+            
+            for index, page_url in enumerate(page_urls):
+                # Extract the actual page number from the URL
+                actual_page_number = int(page_url.split('-')[-1].split('.')[0])
+                
+                # Update status message
+                status_placeholder.write(f"Scraping page {index + 1} of {total_pages}: {page_url}")
+                
+                RESULT = scrape_website_free(page_url)
+                BODY_CONTENT = extract_content(RESULT)
+                CLEANED_CONTENT = clean_content(BODY_CONTENT)
+                
+                # Save and analyze immediately after scraping each page
+                save_result = save_html(BODY_CONTENT, page_url, actual_page_number)
+                html_analysis = analyze_html(page_url, actual_page_number)
+                
+                all_content.append({
+                    "page": actual_page_number,
+                    "page_url": page_url,
+                    "body_content": BODY_CONTENT,
+                    "cleaned_content": CLEANED_CONTENT
+                })
+            
+            st.session_state.all_content = all_content
+            st.session_state.current_page = 1
+            st.session_state.analysis_completed = "All content saved and analyzed successfully!"
+
+            # After successful scraping, update the last_scraped_url and set url_changed to False
+            st.session_state.last_scraped_url = BASE_URL
+            st.session_state.url_changed = False
+        except Exception as e:
+            st.error(f"An error occurred: {str(e)}")
+        finally:
+            # Clear the status placeholder after completion
+            status_placeholder.empty()
+
+BASE_URL = st.text_input("Enter the URL of the first page (including any query parameters): ", 
+                         key="current_url", on_change=update_url)
+
+if BASE_URL:
+    total_pages = st.number_input("Enter the number of pages to scrape:", min_value=1, value=1, step=1, key="total_pages")
+
+    st.button("Scrape and Save Site", on_click=scrape_site, disabled=not st.session_state.url_changed)
 
 if "analysis_completed" in st.session_state and st.session_state.analysis_completed:
     st.success(st.session_state.analysis_completed)

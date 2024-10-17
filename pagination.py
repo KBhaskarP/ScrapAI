@@ -20,15 +20,17 @@ def detect_and_generate_urls(base_url, total_pages):
         match = re.search(pattern, path)
         if match:
             prefix, number = match.groups()
+            start_page = int(number)
             new_path = path.replace(f"{prefix}{number}", f"{prefix}{{}}")
-            return [urljoin(base_url, new_path.format(i)) if i > 1 else base_url for i in range(1, total_pages + 1)]
+            return [urljoin(parsed_url.scheme + "://" + parsed_url.netloc, new_path.format(i)) for i in range(start_page, start_page + total_pages)]
 
     # Check query patterns
     for key in query_patterns:
         if key in query:
+            start_page = int(query[key][0])
             return [
-                f"{parsed_url.scheme}://{parsed_url.netloc}{path}?{key}={i}" if i > 1 
-                else base_url for i in range(1, total_pages + 1)
+                f"{parsed_url.scheme}://{parsed_url.netloc}{path}?{key}={i}" 
+                for i in range(start_page, start_page + total_pages)
             ]
 
     # If no pattern is found, assume the base_url is for all pages

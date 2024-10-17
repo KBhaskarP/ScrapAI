@@ -5,13 +5,13 @@ from dotenv import load_dotenv
 
 
 
-# load_dotenv()
+load_dotenv()
 # AUTH = f'{os.getenv("USERNAME")}:{os.getenv("PASSWORD")}'
 # SBR_WEBDRIVER = f'https://{AUTH}@zproxy.lum-superproxy.io:9515'
 
 def scrape_website_free(website_url):
     print("Launching browser...")
-    chrome_driver_path="chromedriver.exe"
+    chrome_driver_path = f"{os.getenv("CHROMEDRIVER")}"
     options = webdriver.ChromeOptions()
     driver = webdriver.Chrome(service=Service(chrome_driver_path),options=options)
     try:
