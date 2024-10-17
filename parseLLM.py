@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -16,8 +18,8 @@ template = (
     "If the extracted information contains multiple values, separate them clearly using commas or line breaks, depending on context.\n\n"
     "6. **Direct Output:** Your output should only contain the requested data in a clean format, without any extraneous symbols or characters."
 )
-
-MODEL = OllamaLLM(model="llama3.2")
+load_dotenv()
+MODEL = OllamaLLM(model=f"{os.getenv("MODEL_NAME")}")
 
 def parse_with_llm(dom_chunks,parse_description):
     """
