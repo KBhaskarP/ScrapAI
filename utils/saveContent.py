@@ -1,7 +1,7 @@
 import os
 import json
 from datetime import datetime
-from cleaner import remove_script_and_style_tags
+from utils.cleaner import remove_script_and_style_tags
 
 def save_html(content, url, page_num):
     """
