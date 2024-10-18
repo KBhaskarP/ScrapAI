@@ -2,6 +2,31 @@ import re
 from urllib.parse import urlparse, parse_qs, urljoin
 import streamlit as st
 
+def detect_pagination(url):
+    parsed_url = urlparse(url)
+    path = parsed_url.path
+    query = parse_qs(parsed_url.query)
+    
+    # Patterns to check
+    path_patterns = [
+        r'/page[/-]?\d+',
+        r'/p[/-]?\d+',
+        r'/\d+(?:\.html?)?$'
+    ]
+    query_patterns = ['page', 'p', 'pg', 'page_number']
+
+    # Check path patterns
+    for pattern in path_patterns:
+        if re.search(pattern, path):
+            return True
+
+    # Check query patterns
+    for key in query_patterns:
+        if key in query:
+            return True
+
+    return False
+
 def detect_and_generate_urls(base_url, total_pages):
     parsed_url = urlparse(base_url)
     path = parsed_url.path
