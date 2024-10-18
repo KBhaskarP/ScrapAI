@@ -1,10 +1,11 @@
 import streamlit as st
-from scrap import scrape_website_free
-from cleaner import split_dom_content, extract_content, clean_content
-from saveContent import save_html
-from parseLLM import parse_with_llm
-from body_analyzer import analyze_html
-from pagination import detect_and_generate_urls
+from utils.scrap import scrape_website_free
+from utils.cleaner import split_dom_content, extract_content, clean_content
+from utils.saveContent import save_html
+from utils.parseLLM import parse_with_llm
+from utils.body_analyzer import analyze_html
+from utils.pagination import detect_and_generate_urls
+from utils.notify import send_completion_email  # Import the function from notify.py
 
 st.title("ScrapAI")
 
@@ -62,6 +63,14 @@ def scrape_site():
             # After successful scraping, update the last_scraped_url and set url_changed to False
             st.session_state.last_scraped_url = BASE_URL
             st.session_state.url_changed = False
+
+            # Send completion email if enabled
+            if st.session_state.send_email:
+                if send_completion_email(BASE_URL, total_pages):
+                    st.success("Completion email sent successfully!")
+                else:
+                    st.warning("Failed to send completion email.")
+
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
         finally:
@@ -73,6 +82,9 @@ BASE_URL = st.text_input("Enter the URL of the first page (including any query p
 
 if BASE_URL:
     total_pages = st.number_input("Enter the number of pages to scrape:", min_value=1, value=1, step=1, key="total_pages")
+
+    # Add email notification checkbox
+    st.session_state.send_email = st.checkbox("Send completion email", value=False)
 
     st.button("Scrape and Save Site", on_click=scrape_site, disabled=not st.session_state.url_changed)
 
