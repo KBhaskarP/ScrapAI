@@ -6,6 +6,7 @@ from utils.parseLLM import parse_with_llm
 from utils.body_analyzer import analyze_html
 from utils.pagination import detect_pagination,detect_and_generate_urls
 from utils.notify import send_completion_email
+from utils.pdf_processor import process_pdf
 
 st.title("ScrapAI")
 
@@ -93,6 +94,35 @@ def scrape_site():
 BASE_URL = st.text_input("Enter the URL of the first page (including any query parameters): ", 
                          key="current_url", on_change=update_url)
 
+st.subheader("Or upload a PDF file")
+uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
+
+if uploaded_file is not None:
+    st.write("PDF file uploaded successfully!")
+    
+    if st.button("Process PDF"):
+        st.write("Processing PDF... Please wait.")
+        pdf_content = process_pdf(uploaded_file)
+        
+        # Clean the extracted PDF content
+        cleaned_pdf_content = clean_content(pdf_content)
+        
+        # Split the content into chunks
+        pdf_chunks = split_dom_content(cleaned_pdf_content)
+        
+        # Store the PDF content in session state
+        st.session_state.pdf_content = {
+            "page": 1,
+            "page_url": "Uploaded PDF",
+            "body_content": pdf_content,
+            "cleaned_content": cleaned_pdf_content
+        }
+        st.session_state.all_content = [st.session_state.pdf_content]
+        st.session_state.current_page = 1
+        st.session_state.analysis_completed = "PDF processed successfully!"
+        
+        st.success("PDF processed and ready for analysis!")
+
 if BASE_URL:
     if st.session_state.is_paginated:
         total_pages = st.number_input("Enter the number of pages to scrape:", min_value=1, value=1, step=1, key="total_pages")
@@ -111,6 +141,11 @@ if "all_content" in st.session_state:
         if PARSE_DESCRIPTION:
             st.write("Parsing Content...")
             current_page_data = st.session_state.all_content[st.session_state.current_page - 1]
-            DOM_CHUNKS = split_dom_content(current_page_data["cleaned_content"])
+            
+            if current_page_data["page_url"] == "Uploaded PDF":
+                DOM_CHUNKS = split_dom_content(current_page_data["cleaned_content"])
+            else:
+                DOM_CHUNKS = split_dom_content(current_page_data["cleaned_content"])
+            
             extracted_info = parse_with_llm(DOM_CHUNKS, PARSE_DESCRIPTION)
-            st.text_area("Extracted Information:", extracted_info, height=100)
+            st.text_area("Extracted Information:", extracted_info, height=300)
