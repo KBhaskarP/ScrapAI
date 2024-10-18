@@ -4,8 +4,8 @@ from utils.cleaner import split_dom_content, extract_content, clean_content
 from utils.saveContent import save_html
 from utils.parseLLM import parse_with_llm
 from utils.body_analyzer import analyze_html
-from utils.pagination import detect_and_generate_urls
-from utils.notify import send_completion_email  # Import the function from notify.py
+from utils.pagination import detect_pagination,detect_and_generate_urls
+from utils.notify import send_completion_email
 
 st.title("ScrapAI")
 
@@ -14,10 +14,13 @@ if 'last_scraped_url' not in st.session_state:
     st.session_state.last_scraped_url = ""
 if 'url_changed' not in st.session_state:
     st.session_state.url_changed = True
+if 'is_paginated' not in st.session_state:
+    st.session_state.is_paginated = False
 
-# Function to update URL
+# Function to update URL and check pagination
 def update_url():
     st.session_state.url_changed = st.session_state.current_url != st.session_state.last_scraped_url
+    st.session_state.is_paginated = detect_pagination(st.session_state.current_url)
 
 # Function to handle scraping
 def scrape_site():
@@ -27,31 +30,44 @@ def scrape_site():
         try:
             all_content = []
             BASE_URL = st.session_state.current_url
-            total_pages = st.session_state.total_pages
-            
-            page_urls = detect_and_generate_urls(BASE_URL, total_pages)
             
             # Create placeholder for status
             status_placeholder = st.empty()
             
-            for index, page_url in enumerate(page_urls):
-                # Extract the actual page number from the URL
-                actual_page_number = int(page_url.split('-')[-1].split('.')[0])
+            if st.session_state.is_paginated:
+                total_pages = st.session_state.total_pages
+                page_urls = detect_and_generate_urls(BASE_URL, total_pages)
                 
-                # Update status message
-                status_placeholder.write(f"Scraping page {index + 1} of {total_pages}: {page_url}")
+                for index, page_url in enumerate(page_urls):
+                    actual_page_number = index + 1
+                    status_placeholder.write(f"Scraping page {actual_page_number} of {total_pages}: {page_url}")
+                    
+                    RESULT = scrape_website_free(page_url)
+                    BODY_CONTENT = extract_content(RESULT)
+                    CLEANED_CONTENT = clean_content(BODY_CONTENT)
+                    
+                    save_result = save_html(BODY_CONTENT, page_url, actual_page_number)
+                    html_analysis = analyze_html(page_url, actual_page_number)
+                    
+                    all_content.append({
+                        "page": actual_page_number,
+                        "page_url": page_url,
+                        "body_content": BODY_CONTENT,
+                        "cleaned_content": CLEANED_CONTENT
+                    })
+            else:
+                status_placeholder.write(f"Scraping single page: {BASE_URL}")
                 
-                RESULT = scrape_website_free(page_url)
+                RESULT = scrape_website_free(BASE_URL)
                 BODY_CONTENT = extract_content(RESULT)
                 CLEANED_CONTENT = clean_content(BODY_CONTENT)
                 
-                # Save and analyze immediately after scraping each page
-                save_result = save_html(BODY_CONTENT, page_url, actual_page_number)
-                html_analysis = analyze_html(page_url, actual_page_number)
+                save_result = save_html(BODY_CONTENT, BASE_URL, 1)
+                html_analysis = analyze_html(BASE_URL, 1)
                 
                 all_content.append({
-                    "page": actual_page_number,
-                    "page_url": page_url,
+                    "page": 1,
+                    "page_url": BASE_URL,
                     "body_content": BODY_CONTENT,
                     "cleaned_content": CLEANED_CONTENT
                 })
@@ -60,13 +76,11 @@ def scrape_site():
             st.session_state.current_page = 1
             st.session_state.analysis_completed = "All content saved and analyzed successfully!"
 
-            # After successful scraping, update the last_scraped_url and set url_changed to False
             st.session_state.last_scraped_url = BASE_URL
             st.session_state.url_changed = False
 
-            # Send completion email if enabled
             if st.session_state.send_email:
-                if send_completion_email(BASE_URL, total_pages):
+                if send_completion_email(BASE_URL, len(all_content)):
                     st.success("Completion email sent successfully!")
                 else:
                     st.warning("Failed to send completion email.")
@@ -74,16 +88,15 @@ def scrape_site():
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
         finally:
-            # Clear the status placeholder after completion
             status_placeholder.empty()
 
 BASE_URL = st.text_input("Enter the URL of the first page (including any query parameters): ", 
                          key="current_url", on_change=update_url)
 
 if BASE_URL:
-    total_pages = st.number_input("Enter the number of pages to scrape:", min_value=1, value=1, step=1, key="total_pages")
-
-    # Add email notification checkbox
+    if st.session_state.is_paginated:
+        total_pages = st.number_input("Enter the number of pages to scrape:", min_value=1, value=1, step=1, key="total_pages")
+    
     st.session_state.send_email = st.checkbox("Send completion email", value=False)
 
     st.button("Scrape and Save Site", on_click=scrape_site, disabled=not st.session_state.url_changed)

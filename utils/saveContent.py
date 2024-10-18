@@ -2,6 +2,7 @@ import os
 import json
 from datetime import datetime
 from utils.cleaner import remove_script_and_style_tags
+from urllib.parse import urlparse
 
 def save_html(content, url, page_num):
     """
@@ -13,12 +14,13 @@ def save_html(content, url, page_num):
     :return: The string "Content saved to '{file_path}'."
     """
     content = remove_script_and_style_tags(content)
+    URL = url_name_segregation(url)
     folder = 'data'
     if not os.path.exists(folder):
         os.makedirs(folder)
     
     timestamp = datetime.now().strftime("%H_%M_%S_%f")
-    filename = f'books_content_{timestamp}_{page_num}.html'
+    filename = f'{URL}_{timestamp}_{page_num}.html'
     file_path = os.path.join(folder, filename)
     
     with open(file_path, 'w', encoding='utf-8') as f:
@@ -26,17 +28,23 @@ def save_html(content, url, page_num):
     
     return f"Content saved to {file_path}"
 
-def url_name_seggregation(url):
-
+def url_name_segregation(url):
     """
-    This function takes a URL and returns the first segment of the URL.
+    This function takes a URL and returns the domain name without the TLD.
     :param url: The URL to be processed.
-    :return: The first segment of the URL.
+    :return: The domain name without the TLD.
     """
+    parsed_url = urlparse(url)
+    domain = parsed_url.netloc
     
-    url = url
-    result = url.split("//")[1].split(".")[0]
-    return result
+    # Split the domain and remove the TLD (e.g., .com, .org)
+    domain_parts = domain.split('.')
+    if len(domain_parts) > 2:
+        return domain_parts[-2]
+    elif len(domain_parts) == 2:
+        return domain_parts[0]
+    else:
+        return domain
 
 def save_results_to_json(url, metadata, html_structure, keywords, lists, tables, links, page_num):
     """
@@ -55,9 +63,9 @@ def save_results_to_json(url, metadata, html_structure, keywords, lists, tables,
     folder = 'analysis_result'
     if not os.path.exists(folder):
         os.makedirs(folder)
-    
+    URL=url_name_segregation(url)
     timestamp = datetime.now().strftime("%H_%M_%S_%f")
-    filename = f'books_{timestamp}_{page_num}_html_analysis_results.json'
+    filename = f'{URL}_{timestamp}_{page_num}_html_analysis_results.json'
     file_path = os.path.join(folder, filename)
     
     results = {
