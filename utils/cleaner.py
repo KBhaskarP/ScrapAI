@@ -1,3 +1,4 @@
+import re
 from bs4 import BeautifulSoup
 
 def extract_content(html_body):
@@ -22,23 +23,37 @@ def clean_content(content):
     :return: The cleaned content in string format.
     """
     soup = BeautifulSoup(content, 'html.parser')
-    for script_soup in soup(["script", "style"]):
-        script_soup.extract()
-    cleanedContent = soup.get_text(separator="\n")
-    cleanedContent = "\n".join(line.strip() for line in cleanedContent.splitlines() if line.strip())
-    return cleanedContent
+    for element in soup(['script', 'style', 'head', 'title', 'meta', '[document]']):
+        element.decompose()
+    
+    text = soup.get_text()
+    lines = (line.strip() for line in text.splitlines())
+    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+    text = '\n'.join(chunk for chunk in chunks if chunk)
+    
+    # Remove URLs
+    text = re.sub(r'http\S+', '', text)
+    # Remove extra whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    
+    return text
 
-def split_dom_content(dom_content,max_limit=6000):
-    """
-    Split the given dom content into chunks of given max limit.
-
-    :param dom_content: The content of a DOM in string format.
-    :param max_limit: The maximum size of each chunk in bytes.
-    :return: A list of strings, where each string is a chunk of the given content.
-    """
-    return [
-        dom_content[i:i + max_limit] for i in range(0, len(dom_content), max_limit)
-    ]
+def split_dom_content(dom_content, max_limit=6000):
+    sentences = re.split(r'(?<=[.!?])\s+', dom_content)
+    chunks = []
+    current_chunk = ""
+    
+    for sentence in sentences:
+        if len(current_chunk) + len(sentence) <= max_limit:
+            current_chunk += sentence + " "
+        else:
+            chunks.append(current_chunk.strip())
+            current_chunk = sentence + " "
+    
+    if current_chunk:
+        chunks.append(current_chunk.strip())
+    
+    return chunks
 
 def remove_script_and_style_tags(content):
     """

@@ -1,45 +1,62 @@
 import os
-from dotenv import load_dotenv
-from langchain_ollama import OllamaLLM
-from langchain_core.prompts import ChatPromptTemplate
+import requests
+import json
+from groq import Groq
+# from dotenv import load_dotenv
+import streamlit as st
 
-template = (
-    "You are tasked with extracting **specific, relevant information** from the following text content: {dom_content}. "
-    "Please follow these instructions with utmost precision:\n\n"
-    "1. **Strict Matching:** Extract only the information that directly corresponds to the description provided: {parse_description}. "
-    "Be precise in your extraction, and avoid including information that doesn't match the exact request.\n\n"
-    "2. **Contextual Relevance:** Ensure that the extracted information aligns with the broader context of the description. "
-    "If necessary, interpret the surrounding content to ensure the accuracy of the extraction.\n\n"
-    "3. **No Extra Content:** Do not provide any explanations, commentary, or additional text. "
-    "Your response should only contain the extracted information and nothing else.\n\n"
-    "4. **Empty Response if No Match:** If no information directly matches the description, return an empty string (''). "
-    "Avoid returning unrelated data or partial matches.\n\n"
-    "5. **Well-Structured Data:** Provide the extracted information in a well-structured and concise format. "
-    "If the extracted information contains multiple values, separate them clearly using commas or line breaks, depending on context.\n\n"
-    "6. **Direct Output:** Your output should only contain the requested data in a clean format, without any extraneous symbols or characters."
-)
-load_dotenv()
-MODEL = OllamaLLM(model=f"{os.getenv("MODEL_NAME")}")
+# load_dotenv()
 
-def parse_with_llm(dom_chunks,parse_description):
-    """
-    Takes a list of dom chunks and a description of what to parse, and returns a string with the extracted information.
+def parse_with_llm(dom_chunks, parse_description, max_retries=3):
+    GROQ_API_KEY = "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"
+    MODEL = "mixtral-8x7b-32768"
+    client = Groq(api_key=GROQ_API_KEY)
 
-    :param dom_chunks: A list of strings where each string is a chunk of dom content.
-    :param parse_description: A string that describes what information to extract from the dom content.
-    :return: A string of the extracted information, with each extracted value on a new line.
-    """
-    prompt = ChatPromptTemplate.from_template(template)
-    chain = prompt | MODEL
-    parsed_results=[]
-    for i , chunk in enumerate(dom_chunks,start=1) :
-        response = chain.invoke({
-            "dom_content":chunk,
-            "parse_description":parse_description
-        })
-        print(f"batch {i} parsed of len {len(dom_chunks)}")
-        parsed_results.append(response)
-    return "\n".join(parsed_results)
+    def generate_prompt(chunk, description):
+        return f"""You are an expert content analyzer. Extract specific, relevant information from the following text:
+        {chunk}
+        Request: {description}
+        Instructions:
+        1. Extract only information directly related to the request.
+        2. Ensure extracted information is contextually relevant and accurate.
+        3. Provide only the extracted information without additional explanations.
+        4. If no relevant information is found, return an empty string.
+        5. Present the extracted information in a clear, concise format.
 
+        Extracted information:"""
 
-    
+    results = []
+    for i, chunk in enumerate(dom_chunks):
+        for attempt in range(max_retries):
+            try:
+                prompt = generate_prompt(chunk, parse_description)
+                
+                response = client.chat.completions.create(
+                    model=MODEL,
+                    messages=[
+                        {"role": "system", "content": "You are an expert content analyzer."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.1,
+                    max_tokens=1000,
+                    timeout=30  # Add a timeout to prevent long-running requests
+                )
+                
+                result = response.choices[0].message.content.strip()
+                if result:
+                    results.append(result)
+                break
+            except requests.exceptions.Timeout:
+                st.warning(f"Request timed out for chunk {i+1}. Retrying...")
+            except requests.exceptions.RequestException as e:
+                st.error(f"API request failed for chunk {i+1}: {str(e)}")
+                break  # Don't retry on API errors
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    st.error(f"Failed to process chunk {i+1} after {max_retries} attempts: {str(e)}")
+                else:
+                    st.warning(f"Attempt {attempt + 1} for chunk {i+1} failed. Retrying...")
+        
+        return "\n\n".join(results)
+
+  
