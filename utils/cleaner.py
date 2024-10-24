@@ -39,6 +39,13 @@ def clean_content(content):
     return text
 
 def split_dom_content(dom_content, max_limit=6000):
+    """
+    Split DOM content into chunks based on sentence boundaries.
+
+    :param dom_content: The DOM content to split.
+    :param max_limit: Maximum character limit for each chunk (default: 6000).
+    :return: List of content chunks.
+    """
     sentences = re.split(r'(?<=[.!?])\s+', dom_content)
     chunks = []
     current_chunk = ""

@@ -3,6 +3,15 @@ from urllib.parse import urlparse, parse_qs, urljoin
 import streamlit as st
 
 def detect_pagination(url):
+    """
+    Detect if a given URL contains pagination elements.
+
+    Args:
+        url (str): The URL to check for pagination.
+
+    Returns:
+        bool: True if pagination is detected, False otherwise.
+    """
     parsed_url = urlparse(url)
     path = parsed_url.path
     query = parse_qs(parsed_url.query)
@@ -28,6 +37,16 @@ def detect_pagination(url):
     return False
 
 def detect_and_generate_urls(base_url, total_pages):
+    """
+    Detect pagination pattern and generate URLs for multiple pages.
+
+    Args:
+        base_url (str): The initial URL to analyze.
+        total_pages (int): Number of pages to generate URLs for.
+
+    Returns:
+        list: List of generated URLs for pagination.
+    """
     parsed_url = urlparse(base_url)
     path = parsed_url.path
     query = parse_qs(parsed_url.query)

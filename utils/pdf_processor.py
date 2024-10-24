@@ -1,5 +1,4 @@
 import PyPDF2
-import io
 
 def process_pdf(pdf_file):
     """

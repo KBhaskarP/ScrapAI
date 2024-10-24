@@ -2,14 +2,25 @@ import os
 import requests
 import json
 from groq import Groq
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 import streamlit as st
 
-# load_dotenv()
+load_dotenv()
 
 def parse_with_llm(dom_chunks, parse_description, max_retries=3):
-    GROQ_API_KEY = "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"
-    MODEL = "mixtral-8x7b-32768"
+    """
+    Parse DOM chunks using an LLM.
+
+    Args:
+        dom_chunks (list): List of DOM chunks to parse.
+        parse_description (str): Description of parsing task.
+        max_retries (int, optional): Maximum number of retries. Defaults to 3.
+
+    Returns:
+        str: Parsed results joined with newlines.
+    """
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+    MODEL = os.getenv("GROQ_MODEL")
     client = Groq(api_key=GROQ_API_KEY)
 
     def generate_prompt(chunk, description):
@@ -37,9 +48,9 @@ def parse_with_llm(dom_chunks, parse_description, max_retries=3):
                         {"role": "system", "content": "You are an expert content analyzer."},
                         {"role": "user", "content": prompt}
                     ],
-                    temperature=0.1,
-                    max_tokens=1000,
-                    timeout=30  # Add a timeout to prevent long-running requests
+                    temperature=os.getenv("Temperature"),
+                    max_tokens=os.getenv("Max_tokens"),
+                    timeout=os.getenv("Timeout") 
                 )
                 
                 result = response.choices[0].message.content.strip()

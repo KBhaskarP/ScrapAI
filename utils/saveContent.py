@@ -37,7 +37,6 @@ def url_name_segregation(url):
     parsed_url = urlparse(url)
     domain = parsed_url.netloc
     
-    # Split the domain and remove the TLD (e.g., .com, .org)
     domain_parts = domain.split('.')
     if len(domain_parts) > 2:
         return domain_parts[-2]
