@@ -7,6 +7,7 @@ from email.mime.multipart import MIMEMultipart
 
 load_dotenv()
 def send_completion_email(base_url, total_pages):
+    """Send an email notification when web scraping is completed."""
     sender_password = os.getenv("SENDER_PASSKEY")
     recipient_email = os.getenv("RECIPIENT_MAIL")
     sender_email = os.getenv("SENDER_MAIL")

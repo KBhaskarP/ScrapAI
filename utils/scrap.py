@@ -3,13 +3,16 @@ import selenium.webdriver as webdriver
 from selenium.webdriver.chrome.service import Service
 from dotenv import load_dotenv
 
-
-
 load_dotenv()
-# AUTH = f'{os.getenv("USERNAME")}:{os.getenv("PASSWORD")}'
-# SBR_WEBDRIVER = f'https://{AUTH}@zproxy.lum-superproxy.io:9515'
+
 
 def scrape_website_free(website_url):
+    """
+    Scrape a website using Selenium with a local Chrome driver.
+
+    :param website_url: The URL of the website to scrape
+    :return: The HTML content of the website
+    """
     print("Launching browser...")
     chrome_driver_path = f"{os.getenv("CHROMEDRIVER")}"
     options = webdriver.ChromeOptions()
@@ -21,6 +24,8 @@ def scrape_website_free(website_url):
     finally:
         driver.quit()
 
+# AUTH = f'{os.getenv("USERNAME")}:{os.getenv("PASSWORD")}'
+# SBR_WEBDRIVER = f'https://{AUTH}@zproxy.lum-superproxy.io:9515'
 # def scrape_website(website_url,sbr_webdriver=SBR_WEBDRIVER):
 
 #     """
