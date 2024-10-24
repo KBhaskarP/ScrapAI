@@ -20,15 +20,21 @@ ScrapAI is a web scraping and content analysis tool that combines web scraping c
 ### ScrapAI Scraping Feature
 ![ScrapAI Scraping Feature](images/scrapAI_scrap_option.png)
 
-### Features Overview
-![Features Overview](images/scrapAI_pdf_parsing.png)
+### ScrapAI URL ContentParsing
+![ScrapAI LLM URL Parsing](images/scrapAI_llm_model_parsing_result.png)
+
+### Pdf Scraping Feature
+![ScrapAI Pdf Scraping](images/scrapAI_pdf_parsing.png)
 
 ### ScrapAI LLM Parsing Results
-![ScrapAI LLM URL Parsing](images/scrapAI_llm_model_parsing_result.png)
 ![ScrapAI LLM PDF Parsing](images/scrapAI_pdf_parsing_result.png)
 
-### Analysis Result
+### Analysis Results
+
+#### HTML Analysis JSON Output
 ![Analysis HTML Json](images/scrapAI_html_analysis_json.png)
+
+#### Original HTML File
 ![Analysis HTML File](images/scrapAI_og_html.png)
 
 ## Prerequisites
